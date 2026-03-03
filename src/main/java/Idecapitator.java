@@ -5,165 +5,177 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 
+//Custom Exceptions
 class IdecapitatorException extends Exception {
-    public IdecapitatorException(String message) {
-        super(message);
-    }
+    public IdecapitatorException(String message) { super(message); }
 }
 
-public class Idecapitator {
-    private static final String FILE_PATH = "./data/idecapitator.txt";
+//UI Class
+class Ui {
+    private final String line = "    ____________________________________________________________";
+    private final Scanner scanner = new Scanner(System.in);
 
-    public static void main(String[] args) {
-        String line = "    ____________________________________________________________";
-        ArrayList<Task> tasks = new ArrayList<>();
-
-        // Load existing tasks from hard disk
-        loadTasksFromFile(tasks);
-
+    public void showWelcome() {
         System.out.println(line + "\n    Hello! I'm Idecapitator\n    What can I do for you?\n" + line);
-        Scanner scanner = new Scanner(System.in);
+    }
+    public void showLine() { System.out.println(line); }
+    public String readCommand() { return scanner.nextLine(); }
+    public void showError(String message) { System.out.println("    CRITICAL ERROR: " + message); }
+    public void showLoadingError() { System.out.println("    NOTICE: No existing data found. Starting fresh!"); }
+    public void showMessage(String message) { System.out.println("    " + message); }
+}
 
-        while (true) {
-            try {
-                String input = scanner.nextLine();
-                if (input.trim().isEmpty()) continue;
+//TaskList Class
+class TaskList {
+    private final ArrayList<Task> tasks;
+    public TaskList() { this.tasks = new ArrayList<>(); }
+    public TaskList(ArrayList<Task> tasks) { this.tasks = tasks; }
 
-                String command = input.split(" ")[0];
-                System.out.println(line);
+    public void addTask(Task task) { tasks.add(task); }
+    public Task delete(int index) { return tasks.remove(index); }
+    public Task get(int index) { return tasks.get(index); }
+    public int size() { return tasks.size(); }
+    public ArrayList<Task> getAllTasks() { return tasks; }
+}
 
-                switch (command) {
-                    case "bye":
-                        System.out.println("    Bye. Hope to see you again soon!");
-                        System.out.println(line);
-                        scanner.close();
-                        return;
+//Storage Class
+class Storage {
+    private final String filePath;
+    public Storage(String filePath) { this.filePath = filePath; }
 
-                    case "list":
-                        System.out.println("    Here are the tasks in your list:");
-                        for (int i = 0; i < tasks.size(); i++) {
-                            System.out.println("    " + (i + 1) + "." + tasks.get(i));
-                        }
-                        break;
+    public ArrayList<Task> load() throws IdecapitatorException {
+        ArrayList<Task> loadedTasks = new ArrayList<>();
+        File f = new File(filePath);
+        if (!f.exists()) throw new IdecapitatorException("File not found");
 
-                    case "mark":
-                        int mIdx = validateIndex(input, tasks.size());
-                        tasks.get(mIdx).markAsDone();
-                        saveTasksToFile(tasks);
-                        System.out.println("    Nice! I've marked this task as done:\n      " + tasks.get(mIdx));
-                        break;
-
-                    case "unmark":
-                        int uIdx = validateIndex(input, tasks.size());
-                        tasks.get(uIdx).unmarkAsDone();
-                        saveTasksToFile(tasks);
-                        System.out.println("    OK, I've marked this task as not done yet:\n      " + tasks.get(uIdx));
-                        break;
-
-                    case "delete":
-                        int dIdx = validateIndex(input, tasks.size());
-                        Task removedTask = tasks.remove(dIdx);
-                        saveTasksToFile(tasks);
-                        System.out.println("    Noted. I've removed this task:");
-                        System.out.println("      " + removedTask);
-                        System.out.println("    Now you have " + tasks.size() + " tasks in the list.");
-                        break;
-
-                    case "todo":
-                        if (input.trim().length() <= 4) throw new IdecapitatorException("A todo needs a description.");
-                        tasks.add(new Todo(input.substring(5).trim()));
-                        saveTasksToFile(tasks);
-                        printAddedMessage(tasks.get(tasks.size() - 1), tasks.size());
-                        break;
-
-                    case "deadline":
-                        if (!input.contains(" /by ")) throw new IdecapitatorException("Deadlines require '/by'.");
-                        String[] dParts = input.substring(9).split(" /by ");
-                        tasks.add(new Deadline(dParts[0], dParts[1]));
-                        saveTasksToFile(tasks);
-                        printAddedMessage(tasks.get(tasks.size() - 1), tasks.size());
-                        break;
-
-                    case "event":
-                        if (!input.contains(" /from ") || !input.contains(" /to ")) throw new IdecapitatorException("Events need '/from' and '/to'.");
-                        String[] eParts = input.substring(6).split(" /from | /to ");
-                        tasks.add(new Event(eParts[0], eParts[1], eParts[2]));
-                        saveTasksToFile(tasks);
-                        printAddedMessage(tasks.get(tasks.size() - 1), tasks.size());
-                        break;
-
-                    default:
-                        throw new IdecapitatorException("I don't have a protocol for '" + command + "'.");
+        try (Scanner s = new Scanner(f)) {
+            while (s.hasNext()) {
+                String line = s.nextLine();
+                String[] p = line.split(" \\| ");
+                Task t;
+                switch (p[0]) {
+                    case "T": t = new Todo(p[2]); break;
+                    case "D": t = new Deadline(p[2], p[3]); break;
+                    case "E": t = new Event(p[2], p[3], p[4]); break;
+                    default: continue;
                 }
-            } catch (IdecapitatorException e) {
-                System.out.println("    CRITICAL ERROR: " + e.getMessage());
-            } catch (Exception e) {
-                System.out.println("    CRITICAL ERROR: Invalid input format.");
-            } finally {
-                System.out.println(line);
+                if (p[1].equals("1")) t.markAsDone();
+                loadedTasks.add(t);
             }
+        } catch (FileNotFoundException e) {
+            throw new IdecapitatorException("Could not access file.");
         }
+        return loadedTasks;
     }
 
-    // --- File Storage Logic ---
-
-    private static void saveTasksToFile(ArrayList<Task> tasks) {
+    public void save(TaskList tasks) {
         try {
-            File f = new File(FILE_PATH);
-            if (!f.getParentFile().exists()) f.getParentFile().mkdirs(); // Create directory if missing
-
-            FileWriter fw = new FileWriter(FILE_PATH);
-            for (Task t : tasks) {
+            File f = new File(filePath);
+            if (!f.getParentFile().exists()) f.getParentFile().mkdirs();
+            FileWriter fw = new FileWriter(filePath);
+            for (Task t : tasks.getAllTasks()) {
                 fw.write(t.toFileFormat() + System.lineSeparator());
             }
             fw.close();
         } catch (IOException e) {
-            System.out.println("    ERROR: Could not save tasks to disk.");
+            System.out.println("    ERROR: Save failed.");
+        }
+    }
+}
+
+//Main Program Class
+public class Idecapitator {
+    private Storage storage;
+    private TaskList tasks;
+    private Ui ui;
+
+    public Idecapitator(String filePath) {
+        ui = new Ui();
+        storage = new Storage(filePath);
+        try {
+            tasks = new TaskList(storage.load());
+        } catch (IdecapitatorException e) {
+            ui.showLoadingError();
+            tasks = new TaskList();
         }
     }
 
-    private static void loadTasksFromFile(ArrayList<Task> tasks) {
-        File f = new File(FILE_PATH);
-        if (!f.exists()) return; // Handle file-does-not-exist case
+    public void run() {
+        ui.showWelcome();
+        boolean isExit = false;
+        while (!isExit) {
+            try {
+                String fullCommand = ui.readCommand();
+                if (fullCommand.trim().isEmpty()) continue;
+                ui.showLine();
 
-        try {
-            Scanner s = new Scanner(f);
-            while (s.hasNext()) {
-                String line = s.nextLine();
-                String[] parts = line.split(" \\| ");
-                Task task;
-                switch (parts[0]) {
-                    case "T":
-                        task = new Todo(parts[2]);
+                String[] parts = fullCommand.split(" ", 2);
+                String command = parts[0];
+
+                switch (command) {
+                    case "bye":
+                        isExit = true;
+                        ui.showMessage("Bye. Hope to see you again soon!");
                         break;
-                    case "D":
-                        task = new Deadline(parts[2], parts[3]);
+                    case "list":
+                        ui.showMessage("Here are the tasks in your list:");
+                        for (int i = 0; i < tasks.size(); i++) {
+                            ui.showMessage((i + 1) + "." + tasks.get(i));
+                        }
                         break;
-                    case "E":
-                        task = new Event(parts[2], parts[3], parts[4]);
+                    case "mark":
+                        int mIdx = Integer.parseInt(parts[1]) - 1;
+                        tasks.get(mIdx).markAsDone();
+                        storage.save(tasks);
+                        ui.showMessage("Nice! I've marked this task as done:\n      " + tasks.get(mIdx));
                         break;
-                    default: continue;
+                    case "delete":
+                        int dIdx = Integer.parseInt(parts[1]) - 1;
+                        Task removed = tasks.delete(dIdx);
+                        storage.save(tasks);
+                        ui.showMessage("Noted. I've removed this task:\n      " + removed);
+                        ui.showMessage("Now you have " + tasks.size() + " tasks in the list.");
+                        break;
+                    case "todo":
+                        if (parts.length < 2) throw new IdecapitatorException("A todo needs a description.");
+                        Task t = new Todo(parts[1].trim());
+                        tasks.addTask(t);
+                        storage.save(tasks);
+                        ui.showMessage("Got it. I've added this task:\n      " + t);
+                        ui.showMessage("Now you have " + tasks.size() + " tasks in the list.");
+                        break;
+                    case "deadline":
+                        if (!parts[1].contains(" /by ")) throw new IdecapitatorException("Deadlines require '/by'.");
+                        String[] dParts = parts[1].split(" /by ");
+                        Task d = new Deadline(dParts[0], dParts[1]);
+                        tasks.addTask(d);
+                        storage.save(tasks);
+                        ui.showMessage("Got it. I've added this task:\n      " + d);
+                        ui.showMessage("Now you have " + tasks.size() + " tasks in the list.");
+                        break;
+                    case "event":
+                        if (!parts[1].contains(" /from ") || !parts[1].contains(" /to ")) {
+                            throw new IdecapitatorException("Events need '/from' and '/to'.");
+                        }
+                        String[] eParts = parts[1].split(" /from | /to ");
+                        Task e = new Event(eParts[0], eParts[1], eParts[2]);
+                        tasks.addTask(e);
+                        storage.save(tasks);
+                        ui.showMessage("Got it. I've added this task:\n      " + e);
+                        ui.showMessage("Now you have " + tasks.size() + " tasks in the list.");
+                        break;
+                    default:
+                        throw new IdecapitatorException("I don't have a protocol for '" + command + "'.");
                 }
-                if (parts[1].equals("1")) task.markAsDone();
-                tasks.add(task);
+            } catch (Exception e) {
+                ui.showError(e.getMessage());
+            } finally {
+                ui.showLine();
             }
-        } catch (FileNotFoundException e) {
-            // Already handled by f.exists()
         }
     }
 
-    private static int validateIndex(String input, int listSize) throws IdecapitatorException {
-        try {
-            int idx = Integer.parseInt(input.split(" ")[1]) - 1;
-            if (idx < 0 || idx >= listSize) throw new IdecapitatorException("Task index out of bounds.");
-            return idx;
-        } catch (Exception e) {
-            throw new IdecapitatorException("Please provide a valid task number.");
-        }
-    }
-
-    private static void printAddedMessage(Task task, int count) {
-        System.out.println("    Got it. I've added this task:\n      " + task);
-        System.out.println("    Now you have " + count + " tasks in the list.");
+    public static void main(String[] args) {
+        new Idecapitator("./data/idecapitator.txt").run();
     }
 }
