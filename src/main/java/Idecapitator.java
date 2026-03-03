@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 //Custom Exceptions
 class IdecapitatorException extends Exception {
@@ -55,8 +58,15 @@ class Storage {
                 Task t;
                 switch (p[0]) {
                     case "T": t = new Todo(p[2]); break;
-                    case "D": t = new Deadline(p[2], p[3]); break;
-                    case "E": t = new Event(p[2], p[3], p[4]); break;
+                    case "D":
+                        LocalDate deadlineDate = LocalDate.parse(p[3]);
+                        t = new Deadline(p[2], deadlineDate);
+                        break;
+                    case "E":
+                        LocalDate eventFrom = LocalDate.parse(p[3]);
+                        LocalDate eventTo = LocalDate.parse(p[4]);
+                        t = new Event(p[2], eventFrom, eventTo);
+                        break;
                     default: continue;
                 }
                 if (p[1].equals("1")) t.markAsDone();
@@ -97,6 +107,14 @@ public class Idecapitator {
         } catch (IdecapitatorException e) {
             ui.showLoadingError();
             tasks = new TaskList();
+        }
+    }
+
+    private LocalDate parseDate(String dateString) throws IdecapitatorException {
+        try {
+            return LocalDate.parse(dateString);
+        } catch (DateTimeParseException e) {
+            throw new IdecapitatorException("Invalid date format. Please use yyyy-MM-dd (e.g., 2019-12-02)");
         }
     }
 
@@ -147,7 +165,8 @@ public class Idecapitator {
                     case "deadline":
                         if (!parts[1].contains(" /by ")) throw new IdecapitatorException("Deadlines require '/by'.");
                         String[] dParts = parts[1].split(" /by ");
-                        Task d = new Deadline(dParts[0], dParts[1]);
+                        LocalDate deadlineDate = parseDate(dParts[1].trim());
+                        Task d = new Deadline(dParts[0].trim(), deadlineDate);
                         tasks.addTask(d);
                         storage.save(tasks);
                         ui.showMessage("Got it. I've added this task:\n      " + d);
@@ -158,11 +177,39 @@ public class Idecapitator {
                             throw new IdecapitatorException("Events need '/from' and '/to'.");
                         }
                         String[] eParts = parts[1].split(" /from | /to ");
-                        Task e = new Event(eParts[0], eParts[1], eParts[2]);
+                        LocalDate eventFrom = parseDate(eParts[1].trim());
+                        LocalDate eventTo = parseDate(eParts[2].trim());
+                        Task e = new Event(eParts[0].trim(), eventFrom, eventTo);
                         tasks.addTask(e);
                         storage.save(tasks);
                         ui.showMessage("Got it. I've added this task:\n      " + e);
                         ui.showMessage("Now you have " + tasks.size() + " tasks in the list.");
+                        break;
+                    case "find":
+                        if (parts.length < 2) throw new IdecapitatorException("Please provide a date in yyyy-MM-dd format.");
+                        LocalDate searchDate = parseDate(parts[1].trim());
+                        ArrayList<Task> matchingTasks = new ArrayList<>();
+                        for (Task task : tasks.getAllTasks()) {
+                            if (task instanceof Deadline) {
+                                if (((Deadline) task).getBy().equals(searchDate)) {
+                                    matchingTasks.add(task);
+                                }
+                            } else if (task instanceof Event) {
+                                Event evt = (Event) task;
+                                if ((searchDate.equals(evt.getFrom()) || searchDate.equals(evt.getTo()) ||
+                                    (searchDate.isAfter(evt.getFrom()) && searchDate.isBefore(evt.getTo())))) {
+                                    matchingTasks.add(task);
+                                }
+                            }
+                        }
+                        if (matchingTasks.isEmpty()) {
+                            ui.showMessage("No tasks found on " + searchDate.format(DateTimeFormatter.ofPattern("MMM dd yyyy")) + ".");
+                        } else {
+                            ui.showMessage("Tasks on " + searchDate.format(DateTimeFormatter.ofPattern("MMM dd yyyy")) + ":");
+                            for (int i = 0; i < matchingTasks.size(); i++) {
+                                ui.showMessage((i + 1) + "." + matchingTasks.get(i));
+                            }
+                        }
                         break;
                     default:
                         throw new IdecapitatorException("I don't have a protocol for '" + command + "'.");

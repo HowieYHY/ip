@@ -1,3 +1,7 @@
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 abstract class Task {
     protected String description;
     protected boolean isDone;
@@ -26,20 +30,30 @@ class Todo extends Task {
 }
 
 class Deadline extends Task {
-    protected String by;
-    public Deadline(String description, String by) { super(description); this.by = by; }
+    protected LocalDate by;
+    public Deadline(String description, LocalDate by) { super(description); this.by = by; }
+    public LocalDate getBy() { return by; }
     public String toFileFormat() { return "D | " + (isDone ? "1" : "0") + " | " + description + " | " + by; }
     @Override
-    public String toString() { return "[D]" + super.toString() + " (by: " + by + ")"; }
+    public String toString() {
+        String formattedDate = by.format(DateTimeFormatter.ofPattern("MMM dd yyyy"));
+        return "[D]" + super.toString() + " (by: " + formattedDate + ")";
+    }
 }
 
 class Event extends Task {
-    protected String from;
-    protected String to;
-    public Event(String description, String from, String to) {
+    protected LocalDate from;
+    protected LocalDate to;
+    public Event(String description, LocalDate from, LocalDate to) {
         super(description); this.from = from; this.to = to;
     }
+    public LocalDate getFrom() { return from; }
+    public LocalDate getTo() { return to; }
     public String toFileFormat() { return "E | " + (isDone ? "1" : "0") + " | " + description + " | " + from + " | " + to; }
     @Override
-    public String toString() { return "[E]" + super.toString() + " (from: " + from + " to: " + to + ")"; }
+    public String toString() {
+        String formattedFrom = from.format(DateTimeFormatter.ofPattern("MMM dd yyyy"));
+        String formattedTo = to.format(DateTimeFormatter.ofPattern("MMM dd yyyy"));
+        return "[E]" + super.toString() + " (from: " + formattedFrom + " to: " + formattedTo + ")";
+    }
 }
