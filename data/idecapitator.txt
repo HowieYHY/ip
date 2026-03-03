@@ -1,5 +1,4 @@
-D | 0 | submit report | 2019-12-02
-D | 0 | return book | 2019-12-05
-E | 0 | team meeting | 2019-12-02 | 2019-12-03
-T | 0 | do project
-D | 0 | do project | 2026-03-05
+T | 0 | read book
+T | 1 | buy groceries
+T | 0 | test task
+E | 0 | class | 2020-01-01T18:00 | 2020-01-01T18:01

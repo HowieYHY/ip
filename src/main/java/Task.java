@@ -1,5 +1,6 @@
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 abstract class Task {
@@ -13,8 +14,15 @@ abstract class Task {
 
     public void markAsDone() { this.isDone = true; }
     public void unmarkAsDone() { this.isDone = false; }
-
+    public String getDescription() { return description; }
     public abstract String toFileFormat();
+
+    protected String formatDateTime(LocalDateTime dateTime) {
+        if (dateTime.getHour() == 0 && dateTime.getMinute() == 0) {
+            return dateTime.format(DateTimeFormatter.ofPattern("MMM dd yyyy"));
+        }
+        return dateTime.format(DateTimeFormatter.ofPattern("MMM dd yyyy, h:mma"));
+    }
 
     @Override
     public String toString() {
@@ -30,30 +38,38 @@ class Todo extends Task {
 }
 
 class Deadline extends Task {
-    protected LocalDate by;
-    public Deadline(String description, LocalDate by) { super(description); this.by = by; }
-    public LocalDate getBy() { return by; }
+    protected LocalDateTime by;
+
+    public Deadline(String description, LocalDateTime by) { super(description); this.by = by; }
+    public LocalDateTime getBy() { return by; }
     public String toFileFormat() { return "D | " + (isDone ? "1" : "0") + " | " + description + " | " + by; }
+
     @Override
     public String toString() {
-        String formattedDate = by.format(DateTimeFormatter.ofPattern("MMM dd yyyy"));
-        return "[D]" + super.toString() + " (by: " + formattedDate + ")";
+        return "[D]" + super.toString() + " (by: " + formatDateTime(by) + ")";
     }
 }
 
 class Event extends Task {
-    protected LocalDate from;
-    protected LocalDate to;
-    public Event(String description, LocalDate from, LocalDate to) {
-        super(description); this.from = from; this.to = to;
+    protected LocalDateTime from;
+    protected LocalDateTime to;
+
+    public Event(String description, LocalDateTime from, LocalDateTime to) throws IllegalArgumentException {
+        super(description);
+        if (to.isBefore(from)) {
+            throw new IllegalArgumentException("Event end date/time cannot be before start date/time");
+        }
+        this.from = from;
+        this.to = to;
     }
-    public LocalDate getFrom() { return from; }
-    public LocalDate getTo() { return to; }
+
+    public LocalDateTime getFrom() { return from; }
+    public LocalDateTime getTo() { return to; }
     public String toFileFormat() { return "E | " + (isDone ? "1" : "0") + " | " + description + " | " + from + " | " + to; }
+
     @Override
     public String toString() {
-        String formattedFrom = from.format(DateTimeFormatter.ofPattern("MMM dd yyyy"));
-        String formattedTo = to.format(DateTimeFormatter.ofPattern("MMM dd yyyy"));
-        return "[E]" + super.toString() + " (from: " + formattedFrom + " to: " + formattedTo + ")";
+        return "[E]" + super.toString() + " (from: " + formatDateTime(from) + " to: " + formatDateTime(to) + ")";
     }
 }
+
