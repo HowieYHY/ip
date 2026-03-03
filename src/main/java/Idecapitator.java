@@ -49,58 +49,30 @@ public class Idecapitator {
                     case "mark":
                         int mIdx = validateIndex(input, tasks.size());
                         tasks.get(mIdx).markAsDone();
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
                         saveTasksToFile(tasks);
->>>>>>> branch-level-6
-=======
->>>>>>> branch-level-7
                         System.out.println("    Nice! I've marked this task as done:\n      " + tasks.get(mIdx));
                         break;
 
                     case "unmark":
                         int uIdx = validateIndex(input, tasks.size());
                         tasks.get(uIdx).unmarkAsDone();
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
                         saveTasksToFile(tasks);
->>>>>>> branch-level-6
-=======
->>>>>>> branch-level-7
                         System.out.println("    OK, I've marked this task as not done yet:\n      " + tasks.get(uIdx));
                         break;
 
                     case "delete":
                         int dIdx = validateIndex(input, tasks.size());
                         Task removedTask = tasks.remove(dIdx);
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
                         saveTasksToFile(tasks);
->>>>>>> branch-level-6
-=======
->>>>>>> branch-level-7
                         System.out.println("    Noted. I've removed this task:");
                         System.out.println("      " + removedTask);
                         System.out.println("    Now you have " + tasks.size() + " tasks in the list.");
                         break;
 
                     case "todo":
-<<<<<<< HEAD
-                        if (input.trim().length() <= 4) {
-                            throw new IdecapitatorException("A todo needs a description. Don't leave it headless!");
-                        }
-                        tasks.add(new Todo(input.substring(5).trim()));
-<<<<<<< HEAD
-=======
                         if (input.trim().length() <= 4) throw new IdecapitatorException("A todo needs a description.");
                         tasks.add(new Todo(input.substring(5).trim()));
                         saveTasksToFile(tasks);
->>>>>>> branch-level-6
-=======
->>>>>>> branch-level-7
                         printAddedMessage(tasks.get(tasks.size() - 1), tasks.size());
                         break;
 
@@ -133,28 +105,6 @@ public class Idecapitator {
         }
     }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> branch-level-7
-    /**
-     * Helper to validate user input for commands like mark, unmark, and delete.
-     */
-    private static int validateIndex(String input, int listSize) throws IdecapitatorException {
-        try {
-            String[] parts = input.split(" ");
-            if (parts.length < 2) {
-                throw new IdecapitatorException("Please specify a task number.");
-            }
-            int idx = Integer.parseInt(parts[1]) - 1;
-            if (idx < 0 || idx >= listSize) {
-                throw new IdecapitatorException("That task index does not exist in my records.");
-            }
-            return idx;
-        } catch (NumberFormatException e) {
-            throw new IdecapitatorException("Please provide a valid numeric task index.");
-<<<<<<< HEAD
-=======
     // --- File Storage Logic ---
 
     private static void saveTasksToFile(ArrayList<Task> tasks) {
@@ -209,9 +159,6 @@ public class Idecapitator {
             return idx;
         } catch (Exception e) {
             throw new IdecapitatorException("Please provide a valid task number.");
->>>>>>> branch-level-6
-=======
->>>>>>> branch-level-7
         }
     }
 
