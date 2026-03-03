@@ -18,7 +18,6 @@ public class Idecapitator {
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
-            // Step 2: Wrap the entire command processing in a try block
             try {
                 String input = scanner.nextLine();
                 if (input.trim().isEmpty()) {
@@ -42,22 +41,30 @@ public class Idecapitator {
                         break;
 
                     case "mark":
-                        int mIdx = Integer.parseInt(input.split(" ")[1]) - 1;
+                        int mIdx = validateIndex(input, tasks.size());
                         tasks.get(mIdx).markAsDone();
-                        System.out.println(" Nice! I've marked this task as done:\n " + tasks.get(mIdx));
+                        System.out.println("    Nice! I've marked this task as done:\n      " + tasks.get(mIdx));
                         break;
 
                     case "unmark":
-                        int uIdx = Integer.parseInt(input.split(" ")[1]) - 1;
+                        int uIdx = validateIndex(input, tasks.size());
                         tasks.get(uIdx).unmarkAsDone();
-                        System.out.println(" OK, I've marked this task as not done yet:\n " + tasks.get(uIdx));
+                        System.out.println("    OK, I've marked this task as not done yet:\n      " + tasks.get(uIdx));
+                        break;
+
+                    case "delete":
+                        int dIdx = validateIndex(input, tasks.size());
+                        Task removedTask = tasks.remove(dIdx);
+                        System.out.println("    Noted. I've removed this task:");
+                        System.out.println("      " + removedTask);
+                        System.out.println("    Now you have " + tasks.size() + " tasks in the list.");
                         break;
 
                     case "todo":
                         if (input.trim().length() <= 4) {
                             throw new IdecapitatorException("A todo needs a description. Don't leave it headless!");
                         }
-                        tasks.add(new Todo(input.substring(5)));
+                        tasks.add(new Todo(input.substring(5).trim()));
                         printAddedMessage(tasks.get(tasks.size() - 1), tasks.size());
                         break;
 
@@ -80,14 +87,11 @@ public class Idecapitator {
                         break;
 
                     default:
-                        // Handle unknown commands
                         throw new IdecapitatorException("I don't have a protocol for '" + command + "'.");
                 }
             } catch (IdecapitatorException e) {
-                // Step 3: Catch and print your custom error messages
                 System.out.println("    CRITICAL ERROR: " + e.getMessage());
             } catch (Exception e) {
-                // Catch unexpected errors like invalid numbers in mark/unmark
                 System.out.println("    CRITICAL ERROR: Invalid input format.");
             } finally {
                 System.out.println(line);
@@ -95,14 +99,22 @@ public class Idecapitator {
         }
     }
 
-    private static void handleMarking(String input, ArrayList<Task> tasks, boolean isMark) throws IdecapitatorException {
+    /**
+     * Helper to validate user input for commands like mark, unmark, and delete.
+     */
+    private static int validateIndex(String input, int listSize) throws IdecapitatorException {
         try {
-            int idx = Integer.parseInt(input.split(" ")[1]) - 1;
-            if (idx < 0 || idx >= tasks.size()) {
+            String[] parts = input.split(" ");
+            if (parts.length < 2) {
+                throw new IdecapitatorException("Please specify a task number.");
+            }
+            int idx = Integer.parseInt(parts[1]) - 1;
+            if (idx < 0 || idx >= listSize) {
                 throw new IdecapitatorException("That task index does not exist in my records.");
             }
-        } catch (ArrayIndexOutOfBoundsException | NumberFormatException e) {
-            throw new IdecapitatorException("Please provide a valid task number.");
+            return idx;
+        } catch (NumberFormatException e) {
+            throw new IdecapitatorException("Please provide a valid numeric task index.");
         }
     }
 
