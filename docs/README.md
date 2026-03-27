@@ -9,9 +9,9 @@ It supports date and time input, keyword/date-based search, and automatically sa
 
 ## Quick Start
 
-1. **Prerequisites:** Ensure you have **Java 11 or higher** installed on your system.
+1. **Prerequisites:** Ensure you have **Java 17 or higher** installed on your system.
    - Check your Java version: `java -version`
-   - If you don't have Java 11+, download it from [oracle.com](https://www.oracle.com/java/technologies/downloads/) or use OpenJDK.
+   - If you don't have Java 17+, download it from [oracle.com](https://www.oracle.com/java/technologies/downloads/) or use OpenJDK.
 
 2. Download the latest `Idecapitator.jar` from the [releases page](https://github.com/HowieYHY/ip/releases).
 
@@ -330,7 +330,7 @@ Idecapitator will show a `CRITICAL ERROR` message for invalid commands instead o
 
 ### JAR file won't run
 - **Error:** `UnsupportedClassVersionError`
-  - **Solution:** You're using Java 10 or older. Install Java 11 or higher.
+  - **Solution:** You're using Java 16 or older. Install Java 17 or higher.
 - **Error:** `No such file or directory`
   - **Solution:** Make sure the JAR file path is correct and you're in the right directory.
 
