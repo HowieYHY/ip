@@ -9,13 +9,19 @@ It supports date and time input, keyword/date-based search, and automatically sa
 
 ## Quick Start
 
-1. Ensure you have **Java 11 or later** installed.
-2. Download the latest `Idecapitator.jar` from the releases page.
-3. Open a terminal and navigate to the folder containing the JAR.
+1. **Prerequisites:** Ensure you have **Java 11 or higher** installed on your system.
+   - Check your Java version: `java -version`
+   - If you don't have Java 11+, download it from [oracle.com](https://www.oracle.com/java/technologies/downloads/) or use OpenJDK.
+
+2. Download the latest `Idecapitator.jar` from the [releases page](https://github.com/HowieYHY/ip/releases).
+
+3. Open a terminal and navigate to the folder containing the JAR file.
+
 4. Run the app with:
    ```
    java -jar Idecapitator.jar
    ```
+
 5. Type a command and press Enter to interact with the app.
 
 ![Screenshot of welcome message from Idecapitator](https://github.com/user-attachments/assets/26789d4a-996b-49fc-9b0b-4503713f69f7)
@@ -317,4 +323,19 @@ Idecapitator will show a `CRITICAL ERROR` message for invalid commands instead o
 | Invalid time format | `Invalid time format. Use HHmm (e.g., 1800)` |
 | Event end before start | `Event end date/time cannot be before start date/time` |
 | No data file found on startup | `NOTICE: No existing data found. Starting fresh!` |
+
+---
+
+## Troubleshooting
+
+### JAR file won't run
+- **Error:** `UnsupportedClassVersionError`
+  - **Solution:** You're using Java 10 or older. Install Java 11 or higher.
+- **Error:** `No such file or directory`
+  - **Solution:** Make sure the JAR file path is correct and you're in the right directory.
+
+### JAR not found after download
+- Make sure the file downloaded completely. Check the file size matches the release.
+- The JAR should be around 5-10 KB.
+
 
